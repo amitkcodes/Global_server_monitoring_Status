@@ -1,0 +1,633 @@
+<!-- Frontend -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NTP Servers Monitoring</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header .logo-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 120px;
+        }
+
+        .header .title-container {
+            text-align: center;
+        }
+
+        .header img {
+            height: 150px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .table-container, .chart-container, .historical-data {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .table-container:hover, .chart-container:hover, .historical-data:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #1e3a8a;
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin-bottom: 15px;
+            border-left: 4px solid #3b82f6;
+            padding-left: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: #1e3a8a;
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        td {
+            font-size: 0.95rem;
+            color: #4b5563;
+        }
+
+        tr:hover {
+            background-color: #f1f5f9;
+        }
+
+        .status-online { color: #22c55e; font-weight: 500; }
+        .status-offline { color: #ef4444; font-weight: 500; }
+        .status-error { color: #f97316; font-weight: 500; }
+
+        .chart-container canvas {
+            max-height: 400px;
+            width: 100%;
+        }
+
+        .historical-data select, .historical-data button {
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 5px;
+            margin-right: 10px;
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+        }
+
+        .historical-data select:focus, .historical-data button:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .historical-data button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+        }
+
+        .historical-data button:hover {
+            background-color: #1e3a8a;
+        }
+
+        .footer {
+            background-color: #1e3a8a;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .footer .logo-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 80px;
+        }
+
+        .footer .text-container {
+            text-align: center;
+        }
+
+        .footer img {
+            height: 100px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .footer p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .header .logo-container {
+                flex-direction: column;
+                padding: 20px;
+            }
+
+            .header .title-container {
+                margin: 10px 0;
+            }
+
+            .header img, .footer img {
+                height: 50px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .header p {
+                font-size: 0.8rem;
+            }
+
+            .footer .logo-container {
+                flex-direction: column;
+                padding: 20px;
+            }
+
+            .footer .text-container {
+                margin: 10px 0;
+            }
+
+            .footer p {
+                font-size: 0.8rem;
+            }
+
+            .container {
+                padding: 0 10px;
+            }
+
+            .table-container, .chart-container, .historical-data {
+                padding: 15px;
+            }
+
+            th, td {
+                padding: 8px 10px;
+                font-size: 0.85rem;
+            }
+
+            .historical-data select, .historical-data button {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .chart-container canvas {
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo-container">
+            <img src="/static/csir-npl-logo.png" alt="CSIR-NPL Logo">
+            <div class="title-container">
+                <h1>NTP Servers Monitoring Worldwide</h1>
+                <p>Developed by CSIR-NPL | Real-Time NTP Servers Status</p>
+            </div>
+            <img src="/static/ntp-logo.png" alt="NTP Logo">
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="table-container">
+            <h2>Real-Time Data</h2>
+            <p class="text-gray-600 mb-4">
+                The table below displays real-time metrics for NTP servers. The <strong>Status</strong> column indicates server health:
+                <span class="status-online">Online</span> means the server is operational and responding correctly,
+                while <span class="status-error">Error</span> indicates issues such as unresponsiveness or connectivity problems.
+            </p>
+            <table id="realTimeTable">
+                <thead>
+                    <tr>
+                        <th>NTP Server</th>
+                        <th>Time Offset (ms)</th>
+                        <th>Network Delay (ms)</th>
+                        <th>Server Resp. Time (ms)</th>
+                        <th>Root Disp. (ms)</th>
+                        <th>Root Delay (ms)</th>
+                        <th>Precision (ms)</th>
+                        <th>Status</th>
+                        <th>Last Checked</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="chart-container">
+            <h2>NTP Servers Network Offset Worldwide</h2>
+            <canvas id="offsetChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <h2>NTP Servers Network Delay Worldwide</h2>
+            <canvas id="delayChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <h2>NTP Servers Server Response Time Worldwide</h2>
+            <canvas id="responseTimeChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <h2>NTP Servers Root Dispersion Worldwide</h2>
+            <canvas id="rootDispersionChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <h2>NTP Servers Root Delay Worldwide</h2>
+            <canvas id="rootDelayChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <h2>NTP Servers Precision Worldwide</h2>
+            <canvas id="precisionChart"></canvas>
+        </div>
+
+        <div class="historical-data">
+            <h2>Historical Server Data</h2>
+            <select id="serverSelect">
+                <option value="">Select a server to view history</option>
+            </select>
+            <button onclick="viewHistory()">View History</button>
+            <div id="historyTableContainer" style="display: none;">
+                <table id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>Time Offset (ms)</th>
+                            <th>Network Delay (ms)</th>
+                            <th>Server Resp. Time (ms)</th>
+                            <th>Root Disp. (ms)</th>
+                            <th>Root Delay (ms)</th>
+                            <th>Precision (ms)</th>
+                            <th>Status</th>
+                            <th>Last Checked</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="logo-container">
+            <img src="/static/csir-npl-logo.png" alt="CSIR-NPL Logo">
+            <div class="text-container">
+                <p>NTP Servers Status Worldwide. Developed by CSIR-NPL © 2025</p>
+            </div>
+            <img src="/static/ntp-logo.png" alt="NTP Logo">
+        </div>
+    </footer>
+
+    <script>
+        let offsetChart, delayChart, responseTimeChart, rootDispersionChart, rootDelayChart, precisionChart;
+
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        font: { size: 14 },
+                        color: '#333'
+                    }
+                },
+                tooltip: {
+                    enabled: true,
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    titleFont: { size: 14 },
+                    bodyFont: { size: 12 },
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.parsed.y.toFixed(3)} ms`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        font: { size: 12 },
+                        color: '#333',
+                        maxRotation: 45,
+                        minRotation: 45
+                    },
+                    grid: { display: false }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        font: { size: 12 },
+                        color: '#333',
+                        callback: function(value) {
+                            return value.toFixed(3) + ' ms';
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    title: {
+                        display: true,
+                        font: { size: 14 },
+                        color: '#1e3a8a'
+                    }
+                }
+            }
+        };
+
+        const precisionChartOptions = {
+            ...chartOptions,
+            scales: {
+                ...chartOptions.scales,
+                y: {
+                    ...chartOptions.scales.y,
+                    ticks: {
+                        ...chartOptions.scales.y.ticks,
+                        callback: function(value) {
+                            return value.toFixed(6) + ' ms';
+                        }
+                    }
+                }
+            }
+        };
+
+        function initCharts() {
+            const ctxOffset = document.getElementById('offsetChart').getContext('2d');
+            const ctxDelay = document.getElementById('delayChart').getContext('2d');
+            const ctxResponseTime = document.getElementById('responseTimeChart').getContext('2d');
+            const ctxRootDispersion = document.getElementById('rootDispersionChart').getContext('2d');
+            const ctxRootDelay = document.getElementById('rootDelayChart').getContext('2d');
+            const ctxPrecision = document.getElementById('precisionChart').getContext('2d');
+
+            offsetChart = new Chart(ctxOffset, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Offset (ms)', data: [], backgroundColor: [] }] },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            ...chartOptions.scales.y,
+                            title: { ...chartOptions.scales.y.title, text: 'Offset (ms)' }
+                        }
+                    }
+                }
+            });
+
+            delayChart = new Chart(ctxDelay, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Delay (ms)', data: [], backgroundColor: [] }] },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            ...chartOptions.scales.y,
+                            title: { ...chartOptions.scales.y.title, text: 'Delay (ms)' }
+                        }
+                    }
+                }
+            });
+
+            responseTimeChart = new Chart(ctxResponseTime, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Response Time (ms)', data: [], backgroundColor: [] }] },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            ...chartOptions.scales.y,
+                            title: { ...chartOptions.scales.y.title, text: 'Response Time (ms)' }
+                        }
+                    }
+                }
+            });
+
+            rootDispersionChart = new Chart(ctxRootDispersion, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Root Dispersion (ms)', data: [], backgroundColor: [] }] },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            ...chartOptions.scales.y,
+                            title: { ...chartOptions.scales.y.title, text: 'Root Dispersion (ms)' }
+                        }
+                    }
+                }
+            });
+
+            rootDelayChart = new Chart(ctxRootDelay, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Root Delay (ms)', data: [], backgroundColor: [] }] },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            ...chartOptions.scales.y,
+                            title: { ...chartOptions.scales.y.title, text: 'Root Delay (ms)' }
+                        }
+                    }
+                }
+            });
+
+            precisionChart = new Chart(ctxPrecision, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Precision (ms)', data: [], backgroundColor: [] }] },
+                options: {
+                    ...precisionChartOptions,
+                    scales: {
+                        ...precisionChartOptions.scales,
+                        y: {
+                            ...precisionChartOptions.scales.y,
+                            title: { ...precisionChartOptions.scales.y.title, text: 'Precision (ms)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function fetchRealTimeData() {
+            try {
+                const response = await fetch('/api/realtime');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}, Text: ${await response.text()}`);
+                }
+                const data = await response.json();
+
+                const tbody = document.querySelector('#realTimeTable tbody');
+                tbody.innerHTML = '';
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    const statusClass = item.status === 'Online' ? 'status-online' : item.status === 'Offline' ? 'status-offline' : 'status-error';
+                    row.innerHTML = `
+                        <td>${item.server}</td>
+                        <td>${item.offset_ms}</td>
+                        <td>${item.delay_ms}</td>
+                        <td>${item.response_time_ms}</td>
+                        <td>${item.root_dispersion_ms}</td>
+                        <td>${item.root_delay_ms}</td>
+                        <td>${item.precision_ms}</td>
+                        <td class="${statusClass}">${item.status}</td>
+                        <td>${item.timestamp}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                const labels = data.map(item => item.server);
+                const colors = data.map((_, i) => `hsl(${i * 60}, 70%, 50%)`);
+
+                offsetChart.data.labels = labels;
+                offsetChart.data.datasets[0].data = data.map(item => parseFloat(item.offset_ms));
+                offsetChart.data.datasets[0].backgroundColor = colors;
+                offsetChart.update();
+
+                delayChart.data.labels = labels;
+                delayChart.data.datasets[0].data = data.map(item => parseFloat(item.delay_ms));
+                offsetChart.data.datasets[0].backgroundColor = colors;
+                delayChart.update();
+
+                responseTimeChart.data.labels = labels;
+                responseTimeChart.data.datasets[0].data = data.map(item => parseFloat(item.response_time_ms));
+                responseTimeChart.data.datasets[0].backgroundColor = colors;
+                responseTimeChart.update();
+
+                rootDispersionChart.data.labels = labels;
+                rootDispersionChart.data.datasets[0].data = data.map(item => parseFloat(item.root_dispersion_ms));
+                rootDispersionChart.data.datasets[0].backgroundColor = colors;
+                rootDispersionChart.update();
+
+                rootDelayChart.data.labels = labels;
+                rootDelayChart.data.datasets[0].data = data.map(item => parseFloat(item.root_delay_ms));
+                rootDelayChart.data.datasets[0].backgroundColor = colors;
+                rootDelayChart.update();
+
+                precisionChart.data.labels = labels;
+                precisionChart.data.datasets[0].data = data.map(item => parseFloat(item.precision_ms));
+                precisionChart.data.datasets[0].backgroundColor = colors;
+                precisionChart.update();
+
+                const serverSelect = document.getElementById('serverSelect');
+                if (serverSelect.options.length === 1) {
+                    data.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.server;
+                        option.textContent = item.server;
+                        serverSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching real-time data:', error.message);
+                console.error('Stack trace:', error.stack);
+            }
+        }
+
+        async function viewHistory() {
+            const server = document.getElementById('serverSelect').value;
+            if (!server) {
+                alert('Please select a server.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/history?server=${server}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}, Text: ${await response.text()}`);
+                }
+                const data = await response.json();
+
+                const historyTableContainer = document.getElementById('historyTableContainer');
+                const tbody = document.querySelector('#historyTable tbody');
+                tbody.innerHTML = '';
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    const statusClass = item.status === 'Online' ? 'status-online' : item.status === 'Offline' ? 'status-offline' : 'status-error';
+                    row.innerHTML = `
+                        <td>${item.offset_ms}</td>
+                        <td>${item.delay_ms}</td>
+                        <td>${item.response_time_ms}</td>
+                        <td>${item.root_dispersion_ms}</td>
+                        <td>${item.root_delay_ms}</td>
+                        <td>${item.precision_ms}</td>
+                        <td class="${statusClass}">${item.status}</td>
+                        <td>${item.timestamp}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                historyTableContainer.style.display = 'block';
+            } catch (error) {
+                console.error('Error fetching historical data:', error.message);
+                console.error('Stack trace:', error.stack);
+            }
+        }
+
+        initCharts();
+        fetchRealTimeData();
+        setInterval(fetchRealTimeData, 300000);
+    </script>
+</body>
+</html>
