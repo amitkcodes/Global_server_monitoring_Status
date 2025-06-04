@@ -15,8 +15,8 @@
             font-family: Arial, sans-serif;
         }
         .header {
-            background-color: #007bff;
-            color: white;
+            background-color: #B5EAD7; /* Pastel mint */
+            color: rgb(15, 1, 1);
             padding: 1rem;
             text-align: center;
         }
@@ -51,8 +51,8 @@
             height: 300px;
         }
         footer {
-            background-color: #007bff;
-            color: white;
+            background-color: #B5EAD7; /* Pastel mint */
+            color: rgb(0, 0, 0);
             padding: 1rem;
             text-align: center;
             position: relative;
@@ -108,7 +108,7 @@
         <div class="header-content">
             <img src="/static/CSIR_INDIA_logo.png" alt="CSIR India Logo" class="header-logo">
             <div class="header-text">
-                <h1>NTP Servers Monitoring Worldwide</h1>
+                <h1><strong>NTP Servers Monitoring Worldwide</strong></h1>
                 <p>Developed by CSIR-NPL | Real-Time NTP Servers Status</p>
             </div>
             <img src="/static/NPL_INDIA_logo.png" alt="NPL India Logo" class="header-logo">
@@ -140,32 +140,32 @@
         </div>
 
         <!-- Chart Sections -->
-        <h2 class="section-title">NTP Servers Network Offset Worldwide</h2>
+        <h2 class="section-title">Time Offset</h2>
         <div class="chart-container">
             <canvas id="offsetChart"></canvas>
         </div>
 
-        <h2 class="section-title">NTP Servers Network Delay Worldwide</h2>
+        <h2 class="section-title">Network Delay</h2>
         <div class="chart-container">
             <canvas id="delayChart"></canvas>
         </div>
 
-        <h2 class="section-title">NTP Servers Server Response Time Worldwide</h2>
+        <h2 class="section-title">Response Time</h2>
         <div class="chart-container">
             <canvas id="responseTimeChart"></canvas>
         </div>
 
-        <h2 class="section-title">NTP Servers Root Dispersion Worldwide</h2>
+        <h2 class="section-title">Root Dispersion</h2>
         <div class="chart-container">
             <canvas id="rootDispersionChart"></canvas>
         </div>
 
-        <h2 class="section-title">NTP Servers Root Delay Worldwide</h2>
+        <h2 class="section-title">Root Delay</h2>
         <div class="chart-container">
             <canvas id="rootDelayChart"></canvas>
         </div>
 
-        <h2 class="section-title">NTP Servers Precision Worldwide</h2>
+        <h2 class="section-title">Precision</h2>
         <div class="chart-container">
             <canvas id="precisionChart"></canvas>
         </div>
@@ -220,14 +220,88 @@
     <script>
         let charts = {};
 
+        // Function to format ISO timestamp into a readable format
+        function formatTimestamp(isoTimestamp) {
+            const date = new Date(isoTimestamp);
+            const options = {
+                year: 'numeric',
+                month: 'long',
+                day: '2-digit',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            };
+            return `${date.toLocaleString('en-US', options)} IST`;
+        }
+
+        // Custom fetch with timeout and retry
+        async function fetchWithTimeout(url, options = {}, retries = 3, timeout = 30000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const controller = new AbortController();
+                    const id = setTimeout(() => controller.abort(), timeout);
+                    const response = await fetch(url, {
+                        ...options,
+                        signal: controller.signal
+                    });
+                    clearTimeout(id);
+                    return response;
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    console.warn(`Fetch attempt ${i + 1} failed for ${url}, retrying...`, error.message);
+                    await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1))); // Exponential backoff
+                }
+            }
+        }
+
         // Initialize Charts
         function initCharts() {
             const chartOptions = {
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    y: { beginAtZero: true },
-                    x: { ticks: { maxRotation: 45, minRotation: 45 } }
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: '#1C2526', // Dark black for Y-axis ticks
+                            font: {
+                                weight: 'bold' // Bold font for Y-axis ticks
+                            }
+                        },
+                        grid: {
+                            display: false // Remove Y-axis grid lines
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45,
+                            color: '#1C2526', // Dark black for X-axis ticks
+                            font: {
+                                weight: 'bold' // Bold font for X-axis ticks
+                            }
+                        },
+                        grid: {
+                            display: false // Remove X-axis grid lines
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#1C2526', // Dark black for legend labels
+                            font: {
+                                weight: 'bold' // Bold font for legend labels
+                            }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        color: '#1C2526', // Dark black for chart title
+                        font: {
+                            weight: 'bold' // Bold font for chart title
+                        }
+                    }
                 }
             };
 
@@ -271,13 +345,23 @@
         // Fetch Real-Time Data
         async function fetchRealtimeData() {
             try {
-                const response = await fetch('/api/realtime');
+                const response = await fetchWithTimeout('/api/realtime', {}, 3, 30000);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}, Status Text: ${response.statusText}`);
+                }
                 const data = await response.json();
+                if (!Array.isArray(data)) {
+                    throw new Error('Response is not an array: ' + JSON.stringify(data));
+                }
                 updateRealtimeTable(data);
                 updateCharts(data);
                 populateServerDropdown(data);
             } catch (error) {
-                console.error('Error fetching real-time data:', error);
+                console.error('Error fetching real-time data:', {
+                    message: error.message,
+                    stack: error.stack,
+                    timestamp: new Date().toISOString()
+                });
             }
         }
 
@@ -287,6 +371,7 @@
             tbody.innerHTML = '';
             data.forEach(item => {
                 const statusColor = item.status === 'Online' ? 'green' : item.status === 'Error' ? 'red' : 'black';
+                const formattedTimestamp = formatTimestamp(item.timestamp);
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${item.server}</td>
@@ -297,7 +382,7 @@
                     <td>${item.root_delay_ms}</td>
                     <td>${item.precision_ms}</td>
                     <td style="color: ${statusColor};">${item.status}</td>
-                    <td>${item.timestamp}</td>
+                    <td>${formattedTimestamp}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -353,11 +438,21 @@
                 return;
             }
             try {
-                const response = await fetch(`/api/history?server=${server}`);
+                const response = await fetchWithTimeout(`/api/history?server=${server}`, {}, 3, 30000);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}, Status Text: ${response.statusText}`);
+                }
                 const data = await response.json();
+                if (!Array.isArray(data)) {
+                    throw new Error('Response is not an array: ' + JSON.stringify(data));
+                }
                 updateHistoryTable(data);
             } catch (error) {
-                console.error('Error fetching historical data:', error);
+                console.error('Error fetching historical data:', {
+                    message: error.message,
+                    stack: error.stack,
+                    timestamp: new Date().toISOString()
+                });
             }
         }
 
@@ -367,6 +462,7 @@
             tbody.innerHTML = '';
             data.forEach(item => {
                 const statusColor = item.status === 'Online' ? 'green' : item.status === 'Error' ? 'red' : 'black';
+                const formattedTimestamp = formatTimestamp(item.timestamp);
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${item.offset_ms}</td>
@@ -376,7 +472,7 @@
                     <td>${item.root_delay_ms}</td>
                     <td>${item.precision_ms}</td>
                     <td style="color: ${statusColor};">${item.status}</td>
-                    <td>${item.timestamp}</td>
+                    <td>${formattedTimestamp}</td>
                 `;
                 tbody.appendChild(row);
             });
