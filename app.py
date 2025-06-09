@@ -93,6 +93,7 @@ def process_response(data):
     root_disp = response.root_dispersion * 1000
     stratum = response.stratum
     precision = 2 ** response.precision * 1000
+    response_time = (response.tx_time - response.recv_time) * 1000  # milliseconds
     status = "Online"
     
     conn = sqlite3.connect('ntp_data.db', check_same_thread=False, timeout=10)
