@@ -1,3 +1,4 @@
+
 # ===============================
 # NTP Monitoring & API using Flask
 # Author: <Your Name>
@@ -206,6 +207,7 @@ def index():
 @app.route('/api/realtime')
 def get_realtime_data():
     try:
+        # Fetch latest records
         conn = sqlite3.connect('ntp_data.db', check_same_thread=False, timeout=10)
         c = conn.cursor()
         c.execute('''SELECT t1.*
@@ -216,6 +218,7 @@ def get_realtime_data():
         rows = c.fetchall()
         conn.close()
 
+        # Convert to dict list
         data = []
         for row in rows:
             data.append({
@@ -225,14 +228,39 @@ def get_realtime_data():
                 'delay_ms': f"{row[4]:.3f}",
                 'root_delay_ms': f"{row[5]:.3f}",
                 'root_dispersion_ms': f"{row[6]:.3f}",
-                'response_time_ms': f"{row[8]:.3f}",   # This is (T3 - T2)
+                'response_time_ms': f"{row[8]:.3f}",
                 'precision_ms': f"{row[9]:.3f}",
                 'status': row[10]
             })
+
+        # ✅ Custom order (as you shared)
+        preferred_order = [
+            "14.139.60.103",
+            "14.139.60.106",
+            "14.139.60.107",
+            "time.nplindia.in",
+            "time.nplindia.org",
+            "samay1.nic.in",
+            "samay2.nic.in",
+            "time.nist.gov",
+            "pool.ntp.org",
+            "time.windows.com",
+            "time.google.com",
+            "asia.pool.ntp.org",
+            "uk.pool.ntp.org",
+            "157.20.66.8",
+            "157.20.67.8"
+        ]
+
+        # ✅ Sort the data based on preferred_order
+        data.sort(key=lambda x: preferred_order.index(x['server']) if x['server'] in preferred_order else 999)
+
         return jsonify(data)
+
     except Exception as e:
         print(f"Error in /api/realtime: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
 
 # API: History (last 10 records of a given server)
 @app.route('/api/history')
