@@ -29,6 +29,11 @@ Deployed on **Render Hosting** using GitHub.
 ## 🚀 APIs
 ### 1. History (last 10 records)
 GET /api/history?server=<server_address>
+eg../api/history?server=time.google.com
+..../api/history?server=time.nplindia.in
+
+
+
 
 ### 2. Realtime Data
 ```http
